@@ -1,10 +1,15 @@
+// Allow unauthenticated calls from the patient self-serve flow.
+export const config = {
+  verify_jwt: false,
+};
+
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey, apikey",
 };
 
 interface SMSRequest {
@@ -23,19 +28,35 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey =
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
+      Deno.env.get("SERVICE_ROLE_KEY");
 
-    const twilioAccountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
-    const twilioAuthToken = Deno.env.get("TWILIO_AUTH_TOKEN");
-    const twilioPhoneNumber = Deno.env.get("TWILIO_PHONE_NUMBER");
-
-    if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
+    if (!supabaseUrl || !supabaseKey) {
       return new Response(
         JSON.stringify({
-          error: "Twilio credentials not configured",
-          details: "Please set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_PHONE_NUMBER environment variables",
+          error: "Supabase runtime credentials are missing",
+          details:
+            "Expected SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or SERVICE_ROLE_KEY).",
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const tokenId = Deno.env.get("BULKSMS_TOKEN_ID")?.trim();
+    const tokenSecret = Deno.env.get("BULKSMS_TOKEN_SECRET")?.trim();
+
+    if (!tokenId || !tokenSecret) {
+      return new Response(
+        JSON.stringify({
+          error: "BulkSMS.com credentials not configured",
+          details: "Please set BULKSMS_TOKEN_ID and BULKSMS_TOKEN_SECRET environment variables",
         }),
         {
           status: 500,
@@ -56,28 +77,58 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // BulkSMS requires E.164 (must start with +)
     const formattedPhone = to.startsWith("+") ? to : `+${to}`;
 
-    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
-    const basicAuth = btoa(`${twilioAccountSid}:${twilioAuthToken}`);
+    // BulkSMS.com V1 API Endpoint
+    const url = "https://api.bulksms.com/v1/messages";
 
-    const formData = new URLSearchParams();
-    formData.append("To", formattedPhone);
-    formData.append("From", twilioPhoneNumber);
-    formData.append("Body", message);
+    // Basic Auth Header (Base64 of tokenId:tokenSecret)
+    const authHeader = `Basic ${btoa(`${tokenId}:${tokenSecret}`)}`;
 
-    const twilioResponse = await fetch(twilioUrl, {
+    const payload = [
+      {
+        to: formattedPhone,
+        body: message,
+      }
+    ];
+
+    console.log(`Calling BulkSMS API: ${url} for recipient: ${formattedPhone}`);
+
+    const response = await fetch(url, {
       method: "POST",
       headers: {
-        Authorization: `Basic ${basicAuth}`,
-        "Content-Type": "application/x-www-form-urlencoded",
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": authHeader,
       },
-      body: formData.toString(),
+      body: JSON.stringify(payload),
     });
 
-    const twilioData = await twilioResponse.json();
+    const bodyText = await response.text();
+    console.log(`BulkSMS API Response Raw: ${bodyText}`);
 
-    const logStatus = twilioResponse.ok ? "sent" : "failed";
+    let data;
+    try {
+      data = JSON.parse(bodyText);
+    } catch (e) {
+      console.error("Failed to parse BulkSMS response as JSON:", bodyText);
+      return new Response(
+        JSON.stringify({
+          error: "Failed to parse provider response",
+          details: bodyText,
+          providerStatus: response.status,
+        }),
+        {
+          status: 502,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // BulkSMS V1 response is an array of message results
+    const result = data[0];
+    const logStatus = response.status >= 200 && response.status < 300 ? "sent" : "failed";
 
     await supabase.from("sms_logs").insert({
       patient_id: patientId || null,
@@ -85,17 +136,17 @@ Deno.serve(async (req: Request) => {
       phone_number: formattedPhone,
       message,
       status: logStatus,
-      twilio_sid: twilioData.sid || null,
+      twilio_sid: result?.id || null, // Reusing column for external ID
     });
 
-    if (!twilioResponse.ok) {
+    if (!response.ok) {
       return new Response(
         JSON.stringify({
           error: "Failed to send SMS",
-          details: twilioData,
+          details: data,
         }),
         {
-          status: twilioResponse.status,
+          status: response.status,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
@@ -104,8 +155,8 @@ Deno.serve(async (req: Request) => {
     return new Response(
       JSON.stringify({
         success: true,
-        sid: twilioData.sid,
-        status: twilioData.status,
+        messageId: result?.id,
+        status: result?.status?.type,
       }),
       {
         status: 200,

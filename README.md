@@ -29,6 +29,22 @@ A comprehensive real-time hospital queuing system with patient self-service, SMS
 - Pre-configured flags: Cardiac Emergency, Severe Bleeding, Breathing Difficulty, etc.
 - Staff can add flags during check-in or service
 
+## Documentation
+
+| Topic                           | Description                             | Link                                                                                     | Last Updated |
+| ------------------------------- | --------------------------------------- | ---------------------------------------------------------------------------------------- | ------------ |
+| Architecture                    | System design and component overview    | [docs/architecture.md](./docs/architecture.md)                                           | 2026-03-02   |
+| Developer Workflows             | Setup, build, test, and deployment      | [docs/workflows.md](./docs/workflows.md)                                                 | 2026-03-02   |
+| Code Conventions                | Naming, style, and structure guidelines | [docs/conventions.md](./docs/conventions.md)                                             | 2026-03-02   |
+| Integrations                    | APIs, databases, and environment config | [docs/integrations.md](./docs/integrations.md)                                           | 2026-03-02   |
+| Releases                        | Changelog and release process           | [docs/releases.md](./docs/releases.md)                                                   | 2026-03-02   |
+| Testing & Quality Assurance     | Tests, coverage, tools                  | [docs/testing-and-quality-assurance.md](./docs/testing-and-quality-assurance.md)         | 2026-03-02   |
+| Deployment & CI/CD              | Pipelines and infrastructure setup      | [docs/deployment-and-cicd.md](./docs/deployment-and-cicd.md)                             | 2026-03-02   |
+| Collaboration & Version Control | Branching, PRs, best practices          | [docs/collaboration-and-version-control.md](./docs/collaboration-and-version-control.md) | 2026-03-02   |
+| Error Handling & Logging        | Patterns, monitoring, and known issues  | [docs/error-handling-and-logging.md](./docs/error-handling-and-logging.md)               | 2026-03-02   |
+| SMS Alternatives                | Low-friction providers for Kenya/Africa | [docs/sms-alternatives.md](./docs/sms-alternatives.md)                                   | 2026-03-02   |
+| Supabase Keep-Alive             | Preventing free tier project pause      | [docs/supabase-keep-alive.md](./docs/supabase-keep-alive.md)                             | 2026-03-02   |
+
 ## Setup Instructions
 
 ### 1. Environment Variables
@@ -40,13 +56,19 @@ VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-### 2. Twilio Configuration
+### 2. BulkSMS.com Configuration
 
-The SMS functionality requires Twilio credentials. These are configured automatically in your Supabase Edge Function secrets:
+The SMS functionality requires BulkSMS.com API tokens configured in Supabase Edge Function secrets:
 
-- TWILIO_ACCOUNT_SID
-- TWILIO_AUTH_TOKEN
-- TWILIO_PHONE_NUMBER
+- BULKSMS_TOKEN_ID
+- BULKSMS_TOKEN_SECRET
+
+Set them with Supabase CLI:
+
+```bash
+supabase secrets set BULKSMS_TOKEN_ID=your_token_id BULKSMS_TOKEN_SECRET=your_token_secret
+supabase functions deploy send-sms
+```
 
 ### 3. Database Setup
 
@@ -158,19 +180,19 @@ Messages include:
 
 ## Role Permissions
 
-| Role | Capabilities |
-|------|--------------|
-| **Admin** | Full system access, create users, configure stages |
-| **Receptionist** | Manage registration queue, add patients |
-| **Doctor** | Manage doctor consultation queue |
-| **Billing** | Manage billing queue |
-| **Pharmacist** | Manage pharmacy queue |
+| Role             | Capabilities                                       |
+| ---------------- | -------------------------------------------------- |
+| **Admin**        | Full system access, create users, configure stages |
+| **Receptionist** | Manage registration queue, add patients            |
+| **Doctor**       | Manage doctor consultation queue                   |
+| **Billing**      | Manage billing queue                               |
+| **Pharmacist**   | Manage pharmacy queue                              |
 
 ## Technologies Used
 
 - **Frontend**: React + TypeScript + Tailwind CSS
 - **Backend**: Supabase (PostgreSQL + Real-time + Auth + Edge Functions)
-- **SMS**: Twilio API
+- **SMS**: BulkSMS.com (Primary) / Africa's Talking (Legacy)
 - **Icons**: Lucide React
 
 ## Support
