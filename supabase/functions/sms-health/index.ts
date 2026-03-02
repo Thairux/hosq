@@ -17,15 +17,15 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const required = [
-      "TWILIO_ACCOUNT_SID",
-      "TWILIO_AUTH_TOKEN",
-      "TWILIO_PHONE_NUMBER",
-      "SUPABASE_URL",
-      "SERVICE_ROLE_KEY",
-    ];
-
+    const required = ["BULKSMS_TOKEN_ID", "BULKSMS_TOKEN_SECRET", "SUPABASE_URL"];
     const missing = required.filter((key) => !Deno.env.get(key));
+    const hasServiceRoleKey =
+      Boolean(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")) ||
+      Boolean(Deno.env.get("SERVICE_ROLE_KEY"));
+
+    if (!hasServiceRoleKey) {
+      missing.push("SUPABASE_SERVICE_ROLE_KEY");
+    }
 
     return new Response(
       JSON.stringify({

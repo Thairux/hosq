@@ -56,13 +56,19 @@ VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-### 2. Twilio Configuration
+### 2. BulkSMS.com Configuration
 
-The SMS functionality requires Twilio credentials. These are configured automatically in your Supabase Edge Function secrets:
+The SMS functionality requires BulkSMS.com API tokens configured in Supabase Edge Function secrets:
 
-- TWILIO_ACCOUNT_SID
-- TWILIO_AUTH_TOKEN
-- TWILIO_PHONE_NUMBER
+- BULKSMS_TOKEN_ID
+- BULKSMS_TOKEN_SECRET
+
+Set them with Supabase CLI:
+
+```bash
+supabase secrets set BULKSMS_TOKEN_ID=your_token_id BULKSMS_TOKEN_SECRET=your_token_secret
+supabase functions deploy send-sms
+```
 
 ### 3. Database Setup
 

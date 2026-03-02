@@ -11,7 +11,8 @@ jobs:
     steps:
       - name: Send Heartbeat
         run: |
-          curl -i -X POST "${{ secrets.SUPABASE_URL }}/functions/v1/keep-alive" \
+          curl -sS -f -X POST "${{ secrets.SUPABASE_URL }}/functions/v1/keep-alive" \
           -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+          -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
           -H "Content-Type: application/json" \
           -d '{}'

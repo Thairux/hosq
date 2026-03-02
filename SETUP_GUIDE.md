@@ -16,23 +16,24 @@
    VITE_SUPABASE_ANON_KEY=your-anon-key-here
    ```
 
-### Step 2: Configure Twilio (For SMS Notifications)
+### Step 2: Configure BulkSMS.com (For SMS Notifications)
 
-The Twilio credentials are automatically configured in your Supabase Edge Function. You'll need:
+The SMS edge function uses BulkSMS.com API token authentication. Create tokens in your BulkSMS dashboard, then set Supabase function secrets:
 
-1. A Twilio account (sign up at twilio.com)
-2. Your Account SID
-3. Your Auth Token
-4. A Twilio phone number
+```bash
+supabase secrets set BULKSMS_TOKEN_ID=your_token_id BULKSMS_TOKEN_SECRET=your_token_secret
+supabase functions deploy send-sms
+supabase functions deploy sms-health
+```
 
-These are pre-configured in the Supabase environment.
+Required secrets:
+1. `BULKSMS_TOKEN_ID`
+2. `BULKSMS_TOKEN_SECRET`
 
-#### Important: Using a Trial Account
-If you are using a **Twilio Trial Account**, you must manually verify any recipient phone number before you can send an SMS to it:
-1. Go to [Twilio Console > Verified Caller IDs](https://console.twilio.com/us1/develop/phone-numbers/manage/verified).
-2. Click **Add a new Caller ID**.
-3. Enter the number and verify it via SMS code.
-4. For more details, see the [Twilio Configuration Guide](./docs/twilio-configuration.md).
+Verify configuration:
+```bash
+curl -s https://<project-ref>.supabase.co/functions/v1/sms-health
+```
 
 ### Step 3: Create Your First Admin User
 
@@ -159,7 +160,7 @@ Edit the SMS messages in:
 ## Security Notes
 
 - Never commit `.env.local` to version control
-- Keep Twilio credentials secure
+- Keep BulkSMS credentials secure
 - Admin role has full access - assign carefully
 - Patient data is protected by RLS policies
 - Staff can only manage their assigned queues
@@ -168,10 +169,10 @@ Edit the SMS messages in:
 
 ### SMS Not Sending
 
-1. Check Twilio credentials in Supabase Edge Function secrets
+1. Check `BULKSMS_TOKEN_ID` and `BULKSMS_TOKEN_SECRET` in Supabase Edge Function secrets
 2. Verify phone numbers include country code (+1 for US)
 3. Check SMS logs table for error messages
-4. Ensure Twilio account has sufficient balance
+4. Ensure your BulkSMS wallet has sufficient credits
 
 ### Real-Time Updates Not Working
 
@@ -198,7 +199,7 @@ Edit the SMS messages in:
 When deploying to production:
 
 1. Update environment variables in your hosting platform
-2. Configure Twilio production credentials
+2. Configure BulkSMS production credentials
 3. Set up proper domain and SSL
 4. Enable Supabase production mode
 5. Set up monitoring and error tracking

@@ -31,7 +31,7 @@ jobs:
 ## Production Deployment Checklist
 1. Verify all Environment Variables are set in the hosting provider.
 2. Ensure Supabase RLS policies are correctly configured.
-3. Check that Twilio API keys are stored in Supabase secrets.
+3. Check that BulkSMS API tokens (`BULKSMS_TOKEN_ID`, `BULKSMS_TOKEN_SECRET`) are stored in Supabase secrets.
 4. Run a final production build and test in a staging environment.
 
 ---
