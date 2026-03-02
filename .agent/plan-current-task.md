@@ -1,26 +1,37 @@
-# Task Plan: SMS Service Migration Complete
+# Task Plan: SMS Alternatives and Supabase Keep-Alive
 
 ## Objective
-Migrate the primary SMS notification service from Twilio to Africa's Talking to better support the Kenyan market and remove trial restrictions.
+Address user's difficulty with SMS provider registration (blacklisting) and implement a keep-alive mechanism for the Supabase free tier.
 
 ## Current Repository State
-- **Core Logic**: `supabase/functions/send-sms/index.ts` is now fully integrated and DEPLOYED with Africa's Talking.
-- **Secrets**: `AFRICA_STALKING_API_KEY` and `AFRICA_STALKING_USERNAME` are set in Supabase.
-- **Local Storage**: `.env.local` updated with the new credentials for history.
-- **Documentation**: 
-  - `docs/sms-alternatives.md` provides provider comparisons.
-  - `docs/integrations.md` updated with new provider and ENV keys.
-  - `README.md` updated with relevant links.
+- **Documentation**: `docs/sms-alternatives.md` exists but needs better focus on "easy registration" and "shared shortcodes".
+- **Supabase**: Edge functions are present (`send-sms`).
+- **Automation**: No current GitHub Actions for keep-alive.
 
 ## Step-by-Step Plan
-1. [x] **Provider Swap**: Replaced Twilio code in the main Edge Function.
-2. [x] **Documentation Alignment**: Updated Integrations guide.
-3. [x] **Local Env Update**: Saved Africa's Talking credentials to `.env.local`.
-4. [x] **CLI Linking**: Linked project `xealdrmirciqcnnkwmag` using Access Token.
-5. [x] **Set Secrets**: Pushed AT credentials to Supabase cloud.
-6. [x] **Redeploy**: Successfully deployed the updated `send-sms` function to Supabase.
+1. **SMS Provider Research & Selection**:
+   - Identify providers offering shared shortcodes or virtual numbers that don't require business incorporation.
+   - Specifically look for ClickSend, BulkSMS.com, and local Kenyan providers with shared IDs.
+2. **Supabase Keep-Alive Implementation**:
+   - [NEW] Create `supabase/functions/keep-alive/index.ts`.
+   - [NEW] Create `.github/workflows/keep-alive.yml`.
+3. **Documentation Enhancement**:
+   - Update `docs/sms-alternatives.md` with registration-free options (or low-friction options).
+   - [NEW] Create `docs/supabase-keep-alive.md`.
+   - Update `docs/workflows.md` to include maintenance tasks.
+   - Update root `README.md` docs table.
 
 ## Success Criteria
-- [x] Africa's Talking logic is live on Supabase.
-- [x] Credentials are secure and correctly configured.
-- [x] Documentation is fully updated.
+- [ ] List of SMS providers that work without rigid business registration documented.
+- [ ] Deployed/Code-ready Supabase keep-alive Edge Function.
+- [ ] Functional GitHub Action workflow for periodic pings.
+- [ ] Comprehensive documentation following Peter's professional standards.
+
+## Assumptions & Risks
+- **Assumption**: A simple `SELECT 1` or query on an existing table is sufficient for activity.
+- **Risk**: SMS providers might still require some form of ID verification (KYC) even for pay-as-you-go.
+
+## Cost Analysis
+- **SMS**: Pay-as-you-go costs vary (approx $0.01 - $0.05 per SMS). No monthly subscriptions.
+- **Supabase**: $0 (Free Tier).
+- **GitHub Actions**: $0 (Free Tier).

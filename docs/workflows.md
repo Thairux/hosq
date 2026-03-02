@@ -57,6 +57,22 @@ The output will be in the `dist/` folder.
   npm run typecheck
   ```
 
+## Project Maintenance
+
+### Supabase Keep-Alive (Free Tier)
+To prevent the Supabase project from being paused due to inactivity:
+1.  **Deploy the Heartbeat Function**:
+    ```bash
+    supabase functions deploy keep-alive
+    ```
+2.  **Set GitHub Secrets**:
+    -   `SUPABASE_URL`: Your project URL.
+    -   `SUPABASE_ANON_KEY`: Your project's anonymous key.
+3.  **Monitor Actions**: The GitHub Action is scheduled to run every 6 days. You can check the status in the **Actions** tab.
+
+For detailed information, see [docs/supabase-keep-alive.md](./supabase-keep-alive.md).
+
 ---
 *Author: Peter Thairu Muigai*
-*Version: 1.0.0*
+*Version: 1.1.0*
+*Last Updated: 2026-03-02*

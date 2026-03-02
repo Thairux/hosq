@@ -33,17 +33,17 @@ A comprehensive real-time hospital queuing system with patient self-service, SMS
 
 | Topic                           | Description                             | Link                                                                                     | Last Updated |
 | ------------------------------- | --------------------------------------- | ---------------------------------------------------------------------------------------- | ------------ |
-| Architecture                    | System design and component overview    | [docs/architecture.md](./docs/architecture.md)                                           | 2026-02-09   |
-| Developer Workflows             | Setup, build, test, and deployment      | [docs/workflows.md](./docs/workflows.md)                                                 | 2026-02-09   |
-| Code Conventions                | Naming, style, and structure guidelines | [docs/conventions.md](./docs/conventions.md)                                             | 2026-02-09   |
-| Integrations                    | APIs, databases, and environment config | [docs/integrations.md](./docs/integrations.md)                                           | 2026-02-09   |
-| Releases                        | Changelog and release process           | [docs/releases.md](./docs/releases.md)                                                   | 2026-02-09   |
-| Testing & Quality Assurance     | Tests, coverage, tools                  | [docs/testing-and-quality-assurance.md](./docs/testing-and-quality-assurance.md)         | 2026-02-09   |
-| Deployment & CI/CD              | Pipelines and infrastructure setup      | [docs/deployment-and-cicd.md](./docs/deployment-and-cicd.md)                             | 2026-02-09   |
-| Collaboration & Version Control | Branching, PRs, best practices          | [docs/collaboration-and-version-control.md](./docs/collaboration-and-version-control.md) | 2026-02-09   |
-| Error Handling & Logging        | Patterns, monitoring, and known issues  | [docs/error-handling-and-logging.md](./docs/error-handling-and-logging.md)               | 2026-02-09   |
-| Twilio Configuration            | Verifying numbers for trial accounts    | [docs/twilio-configuration.md](./docs/twilio-configuration.md)                           | 2026-02-16   |
-| SMS Alternatives                | Local providers for the Kenyan market   | [docs/sms-alternatives.md](./docs/sms-alternatives.md)                                   | 2026-02-16   |
+| Architecture                    | System design and component overview    | [docs/architecture.md](./docs/architecture.md)                                           | 2026-03-02   |
+| Developer Workflows             | Setup, build, test, and deployment      | [docs/workflows.md](./docs/workflows.md)                                                 | 2026-03-02   |
+| Code Conventions                | Naming, style, and structure guidelines | [docs/conventions.md](./docs/conventions.md)                                             | 2026-03-02   |
+| Integrations                    | APIs, databases, and environment config | [docs/integrations.md](./docs/integrations.md)                                           | 2026-03-02   |
+| Releases                        | Changelog and release process           | [docs/releases.md](./docs/releases.md)                                                   | 2026-03-02   |
+| Testing & Quality Assurance     | Tests, coverage, tools                  | [docs/testing-and-quality-assurance.md](./docs/testing-and-quality-assurance.md)         | 2026-03-02   |
+| Deployment & CI/CD              | Pipelines and infrastructure setup      | [docs/deployment-and-cicd.md](./docs/deployment-and-cicd.md)                             | 2026-03-02   |
+| Collaboration & Version Control | Branching, PRs, best practices          | [docs/collaboration-and-version-control.md](./docs/collaboration-and-version-control.md) | 2026-03-02   |
+| Error Handling & Logging        | Patterns, monitoring, and known issues  | [docs/error-handling-and-logging.md](./docs/error-handling-and-logging.md)               | 2026-03-02   |
+| SMS Alternatives                | Low-friction providers for Kenya/Africa | [docs/sms-alternatives.md](./docs/sms-alternatives.md)                                   | 2026-03-02   |
+| Supabase Keep-Alive             | Preventing free tier project pause      | [docs/supabase-keep-alive.md](./docs/supabase-keep-alive.md)                             | 2026-03-02   |
 
 ## Setup Instructions
 
