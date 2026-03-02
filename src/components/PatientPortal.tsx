@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useQueueStages } from '../hooks/useQueue';
 import { sendSMS } from '../lib/sms';
+import { runAutoEmergencyTriage } from '../lib/auto-triage';
 import { CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
 export function PatientPortal() {
@@ -78,6 +79,17 @@ export function PatientPortal() {
         queue_entry_id: queueEntry.id,
         stage_id: firstStage.id,
       });
+
+      const parsedAge = formData.age ? parseInt(formData.age) : undefined;
+      const triageResult = await runAutoEmergencyTriage(
+        queueEntry.id,
+        patientId,
+        formData.visitReason,
+        parsedAge
+      );
+      if (!triageResult.success) {
+        console.warn('Auto triage failed:', triageResult.error);
+      }
 
       const smsResult = await sendSMS(
         formData.phoneNumber,
