@@ -12,6 +12,7 @@ export function PatientPortal() {
   const [error, setError] = useState('');
   const [queueEntryId, setQueueEntryId] = useState('');
   const [queueNumber, setQueueNumber] = useState('');
+  const [emergencyFlagged, setEmergencyFlagged] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -95,6 +96,8 @@ export function PatientPortal() {
       );
       if (!triageResult.success) {
         console.warn('Auto triage failed:', triageResult.error);
+      } else if (triageResult.flagged) {
+        setEmergencyFlagged(true);
       }
 
       const smsResult = await sendSMS(
@@ -137,6 +140,18 @@ export function PatientPortal() {
             </div>
           </div>
 
+          {emergencyFlagged && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4 flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-red-800">Priority Case Detected</p>
+                <p className="text-sm text-red-700 mt-1">
+                  Based on your symptoms, your case has been flagged as a priority emergency. You have been moved to the front of the queue.
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="bg-blue-50 rounded-lg p-4 mb-6">
             <p className="text-sm text-gray-700">
               Track your position in real-time below. You'll receive SMS notifications when it's your turn.
@@ -152,6 +167,7 @@ export function PatientPortal() {
           <button
             onClick={() => {
               setStep('form');
+              setEmergencyFlagged(false);
               setFormData({
                 fullName: '',
                 phoneNumber: '',
