@@ -33,8 +33,9 @@ const rules: Rule[] = [
     id: "unconscious",
     targetFlags: ["unconscious"],
     strong: [
-      /\bunconscious|unconscious|not\s+respond(ing)?|not\s+moving\b/,
+      /\bunconscious|not\s+respond(ing)?|not\s+moving\b/,
       /\bfainted|fainting|collapse(d)?|passed\s*out\b/,
+      /\bnot\s+wak(ing|e)\s+up|won'?t\s+wake\s+up|limp\s+body\b/,
       /\bcoma|no\s+response|amezimia|hajitambui\b/,
     ],
     weak: [/\bdizzy|dizziness|confus(ed|ion)\b/, /\bweak|can't\s+stand\b/],
@@ -45,6 +46,7 @@ const rules: Rule[] = [
     targetFlags: ["breathing_difficulty", "anaphylaxis"],
     strong: [
       /\b(can'?t|cannot|hard\s*to)\s*brea(th|d)e|breathless|short(ness)?\s+of\s+breath\b/,
+      /\bcan'?t\s+breathe|difficulty\s+breath(ing)?|trouble\s+breath(ing)?\b/,
       /\bwheez(ing)?|asthma\s+attack|choking\b/,
       /\bblue\s+lips|gasp(ing)?|cannot\s+inhale|hapumui\s+vizuri\b/,
     ],
@@ -55,12 +57,17 @@ const rules: Rule[] = [
     id: "severe_bleeding",
     targetFlags: ["severe_bleeding", "obstetric_emergency"],
     strong: [
-      /\bsevere\s+bleed(ing)?|bleed(ing)?\s+alot|bleeding\s+too\s+much\b/,
+      /\bsevere\s+bleed(ing)?|bleed(ing)?\s+a\s*lot|bleeding\s+too\s+much\b/,
+      /\bheavy\s+bleed(ing)?|profuse\s+bleed(ing)?|active\s+bleed(ing)?\b/,
+      /\bnon.?stop\s+bleed(ing)?|keeps?\s+bleed(ing)?|won'?t\s+stop\s+bleed(ing)?\b/,
+      /\blot(s)?\s+of\s+blood|bleed(ing)?\s+(heavily|profusely|badly)\b/,
       /\bnot\s+stop(ping)?\s+bleed(ing)?|uncontrol(l)?ed\s+bleed(ing)?\b/,
-      /\bvomit(ing)?\s+blood|blood\s+in\s+stool|black\s+stool|anatoka\s+damu\s+nyingi\b/,
+      /\bvomit(ing)?\s+blood|blood\s+in\s+stool|black\s+stool\b/,
+      /\banatoka\s+damu\s+nyingi|kutoka\s+damu|damu\s+nyingi\b/,
+      /\bbleed(ing)?\b/,
     ],
     weak: [/\bblood\b/, /\bwound|cut\b/, /\bpost.?partum|pregnan(t|cy)\b/],
-    weakThreshold: 2,
+    weakThreshold: 1,
   },
   {
     id: "cardiac_emergency",
@@ -138,8 +145,9 @@ const rules: Rule[] = [
       /\baccident|rta|road\s+traffic|knocked\s+by\s+car|bodaboda\s+accident\b/,
       /\bhead\s+injury|deep\s+cut|fracture|broken\s+bone\b/,
       /\bfall\s+from\s+height|stab(bed)?|gunshot\b/,
+      /\bbleed(ing)?\b/,
     ],
-    weak: [/\bswelling\b/, /\bsevere\s+pain\b/, /\bbleeding\b/],
+    weak: [/\bswelling\b/, /\bsevere\s+pain\b/],
     weakThreshold: 2,
   },
   {
@@ -193,8 +201,8 @@ const rules: Rule[] = [
       /\bsevere\s+pain|pain\s+too\s+much|pain\s+9\/10|pain\s+10\/10\b/,
       /\bcannot\s+walk\s+due\s+pain|scream(ing)?\s+pain|maumivu\s+makali\b/,
     ],
-    weak: [/\bpain\s+all\s+over\b/, /\bcry(ing)?\s+from\s+pain\b/, /\bnot\s+sleeping\s+pain\b/],
-    weakThreshold: 2,
+    weak: [/\bpain\s+all\s+over\b/, /\bcry(ing)?\s+from\s+pain\b/, /\bnot\s+sleeping\s+pain\b/, /\bpain\b/],
+    weakThreshold: 1,
   },
 ];
 
