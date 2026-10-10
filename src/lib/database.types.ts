@@ -61,7 +61,8 @@ export interface Database {
       patients: {
         Row: {
           id: string
-          phone_number: string
+          phone_number: string | null
+          email: string | null
           full_name: string
           age: number | null
           visit_reason: string | null
@@ -70,7 +71,8 @@ export interface Database {
         }
         Insert: {
           id?: string
-          phone_number: string
+          phone_number?: string | null
+          email?: string | null
           full_name: string
           age?: number | null
           visit_reason?: string | null
@@ -79,7 +81,8 @@ export interface Database {
         }
         Update: {
           id?: string
-          phone_number?: string
+          phone_number?: string | null
+          email?: string | null
           full_name?: string
           age?: number | null
           visit_reason?: string | null
@@ -210,6 +213,44 @@ export interface Database {
           is_active?: boolean
           email_verified?: boolean
           created_at?: string
+        }
+      }
+      email_logs: {
+        Row: {
+          id: string
+          patient_id: string | null
+          queue_entry_id: string | null
+          email: string
+          subject: string
+          message: string
+          status: string
+          provider_id: string | null
+          error: string | null
+          sent_at: string
+        }
+        Insert: {
+          id?: string
+          patient_id?: string | null
+          queue_entry_id?: string | null
+          email: string
+          subject: string
+          message: string
+          status?: string
+          provider_id?: string | null
+          error?: string | null
+          sent_at?: string
+        }
+        Update: {
+          id?: string
+          patient_id?: string | null
+          queue_entry_id?: string | null
+          email?: string
+          subject?: string
+          message?: string
+          status?: string
+          provider_id?: string | null
+          error?: string | null
+          sent_at?: string
         }
       }
       sms_logs: {

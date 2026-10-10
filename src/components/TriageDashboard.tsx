@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useQueueEntries, useQueueStages, useEmergencyFlags } from '../hooks/useQueue';
 import { supabase } from '../lib/supabase';
-import { notifyPatientStageChange } from '../lib/sms';
+import { notifyPatientStageChange } from '../lib/email';
 import {
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
   CheckCircle,
   Clock,
-  Phone,
+  Mail,
   User,
   Users,
   Zap,
@@ -290,8 +290,8 @@ export function TriageDashboard() {
                               {entry.patients?.full_name}
                             </p>
                             <p className="text-xs text-gray-400 flex items-center gap-1">
-                              <Phone className="w-3 h-3" />
-                              {entry.patients?.phone_number}
+                              <Mail className="w-3 h-3" />
+                              {entry.patients?.email || 'No email'}
                               {entry.patients?.age && ` · ${entry.patients.age}y`}
                             </p>
                           </div>

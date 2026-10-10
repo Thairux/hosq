@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { notifyPositionChange } from '../lib/sms';
+import { notifyPositionChange } from '../lib/email';
 
 export interface QueueEntry {
   id: string;
@@ -16,7 +16,7 @@ export interface QueueEntry {
   doctor_room: number | null;
   patients?: {
     full_name: string;
-    phone_number: string;
+    email: string | null;
     age: number | null;
     visit_reason: string | null;
   };
@@ -60,7 +60,7 @@ export function useQueueEntries(stageId?: string, status: string = 'waiting') {
         .from('queue_entries')
         .select(`
           *,
-          patients(full_name, phone_number, age, visit_reason),
+          patients(full_name, email, age, visit_reason),
           queue_stages(display_name, name)
         `)
         .order('has_emergency_flag', { ascending: false })

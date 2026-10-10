@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { createConfirmedUser } from '../lib/supabase-admin';
 import { useAuth } from '../contexts/AuthContext';
-import { normalizeKenyanPhone } from '../lib/phone';
+import { EMAIL_RE } from '../lib/email';
 import type { Database } from '../lib/database.types';
 import { Users, Settings, UserPlus, Shield, AlertTriangle, SlidersHorizontal, RefreshCw, DatabaseZap } from 'lucide-react';
 
@@ -19,12 +19,12 @@ export function AdminDashboard() {
   const [loading, setLoading] = useState(false);
   const [refreshingOps, setRefreshingOps] = useState(false);
 
-  const [smsEnabled, setSmsEnabled] = useState(true);
-  const [smsHealth, setSmsHealth] = useState('Checking SMS health...');
-  const [testSmsNumber, setTestSmsNumber] = useState('');
-  const [testSmsStatus, setTestSmsStatus] = useState('');
+  const [emailEnabled, setEmailEnabled] = useState(true);
+  const [emailHealth, setEmailHealth] = useState('Checking email health...');
+  const [testEmailAddress, setTestEmailAddress] = useState('');
+  const [testEmailStatus, setTestEmailStatus] = useState('');
 
-  const [cooldownPhone, setCooldownPhone] = useState('');
+  const [cooldownEmail, setCooldownEmail] = useState('');
   const [cooldownHours, setCooldownHours] = useState(6);
   const [cooldownReason, setCooldownReason] = useState('Admin override');
   const [cooldownStatus, setCooldownStatus] = useState('');
@@ -56,24 +56,20 @@ export function AdminDashboard() {
   const refreshOps = async () => {
     setRefreshingOps(true);
     const [setting, ovrd] = await Promise.all([
-      (supabase as any).from('system_settings').select('value').eq('key', 'sms_enabled').maybeSingle(),
+      (supabase as any).from('system_settings').select('value').eq('key', 'email_enabled').maybeSingle(),
       (supabase as any).from('checkin_cooldown_overrides').select('*').order('created_at', { ascending: false }).limit(30),
     ]);
     const enabled = setting?.data?.value?.enabled !== false;
-    setSmsEnabled(enabled);
+    setEmailEnabled(enabled);
     setOverrides(ovrd.data || []);
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sms-health`, {
-        headers: {
-          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        },
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`, {
+        method: 'OPTIONS',
       });
-      const body = await res.json();
-      setSmsHealth(body?.ok ? 'SMS function healthy.' : `SMS issue: ${(body?.missing || []).join(', ')}`);
+      setEmailHealth(res.ok ? 'Email function reachable.' : `Email issue: HTTP ${res.status}`);
     } catch {
-      setSmsHealth('SMS health check failed.');
+      setEmailHealth('Email health check failed.');
     }
     setRefreshingOps(false);
   };
@@ -104,42 +100,42 @@ export function AdminDashboard() {
     await refreshCore();
   };
 
-  const toggleSms = async () => {
-    const next = !smsEnabled;
+  const toggleEmail = async () => {
+    const next = !emailEnabled;
     const { error } = await (supabase as any).from('system_settings').upsert(
-      { key: 'sms_enabled', value: { enabled: next }, updated_by_user_id: userRole?.user_id || null },
+      { key: 'email_enabled', value: { enabled: next }, updated_by_user_id: userRole?.user_id || null },
       { onConflict: 'key' }
     );
     if (error) {
-      alert(`Failed to update SMS setting: ${error.message}`);
+      alert(`Failed to update email setting: ${error.message}`);
       return;
     }
-    setSmsEnabled(next);
+    setEmailEnabled(next);
   };
 
   const grantCooldownOverride = async (e: React.FormEvent) => {
     e.preventDefault();
-    const normalized = normalizeKenyanPhone(cooldownPhone);
-    if (!normalized) {
-      setCooldownStatus('Invalid Kenyan mobile number.');
+    const normalized = cooldownEmail.trim().toLowerCase();
+    if (!EMAIL_RE.test(normalized)) {
+      setCooldownStatus('Invalid email address.');
       return;
     }
     const bypassUntil = new Date(Date.now() + cooldownHours * 60 * 60 * 1000).toISOString();
     const { error } = await (supabase as any).from('checkin_cooldown_overrides').upsert(
       {
-        phone_number: normalized,
+        email: normalized,
         bypass_until: bypassUntil,
         reason: cooldownReason || null,
         created_by_user_id: userRole?.user_id || null,
       },
-      { onConflict: 'phone_number' }
+      { onConflict: 'email' }
     );
     if (error) {
       setCooldownStatus(`Failed: ${error.message}`);
       return;
     }
     setCooldownStatus(`Override granted for ${normalized}`);
-    setCooldownPhone('');
+    setCooldownEmail('');
     await refreshOps();
   };
 
@@ -168,16 +164,16 @@ export function AdminDashboard() {
       if (!firstStage) throw new Error('No active queue stage found. Please create a stage first.');
 
       const DEMO_PATIENTS = [
-        { name: 'James Mwangi',   phone: '+254712345001', age: 42, reason: 'Persistent headache and mild fever for 3 days, slight dizziness', emergency: false },
-        { name: 'Grace Wanjiku',  phone: '+254722345002', age: 28, reason: 'Sore throat and difficulty swallowing, mild ear pain since yesterday', emergency: false },
-        { name: 'Peter Kamau',    phone: '+254733345003', age: 55, reason: 'Lower back pain radiating to the left leg for about a week', emergency: false },
-        { name: 'Mary Akinyi',    phone: '+254711345004', age: 34, reason: 'Skin rash on arms and torso with moderate itching', emergency: false },
-        { name: 'David Omondi',   phone: '+254720345005', age: 19, reason: 'Stomach cramps and nausea after eating, no vomiting', emergency: false },
-        { name: 'Fatuma Hassan',  phone: '+254701345006', age: 61, reason: 'Swollen right ankle after a fall this morning, pain when walking', emergency: false },
-        { name: 'Samuel Njoroge', phone: '+254725345007', age: 47, reason: 'Persistent dry cough and mild shortness of breath for two weeks', emergency: false },
-        { name: 'Agnes Chebet',   phone: '+254714345008', age: 23, reason: 'Irregular menstrual cycle and lower abdominal discomfort', emergency: false },
-        { name: 'Brian Otieno',   phone: '+254715345009', age: 38, reason: 'Severe chest pain radiating to left arm and jaw, heavy sweating and feeling faint', emergency: true },
-        { name: 'Rose Wambui',    phone: '+254718345010', age: 72, reason: 'Sudden severe headache, left-side facial drooping, slurred speech and confusion', emergency: true },
+        { name: 'James Mwangi',   email: 'james.mwangi@example.com', age: 42, reason: 'Persistent headache and mild fever for 3 days, slight dizziness', emergency: false },
+        { name: 'Grace Wanjiku',  email: 'grace.wanjiku@example.com', age: 28, reason: 'Sore throat and difficulty swallowing, mild ear pain since yesterday', emergency: false },
+        { name: 'Peter Kamau',    email: 'peter.kamau@example.com', age: 55, reason: 'Lower back pain radiating to the left leg for about a week', emergency: false },
+        { name: 'Mary Akinyi',    email: 'mary.akinyi@example.com', age: 34, reason: 'Skin rash on arms and torso with moderate itching', emergency: false },
+        { name: 'David Omondi',   email: 'david.omondi@example.com', age: 19, reason: 'Stomach cramps and nausea after eating, no vomiting', emergency: false },
+        { name: 'Fatuma Hassan',  email: 'fatuma.hassan@example.com', age: 61, reason: 'Swollen right ankle after a fall this morning, pain when walking', emergency: false },
+        { name: 'Samuel Njoroge', email: 'samuel.njoroge@example.com', age: 47, reason: 'Persistent dry cough and mild shortness of breath for two weeks', emergency: false },
+        { name: 'Agnes Chebet',   email: 'agnes.chebet@example.com', age: 23, reason: 'Irregular menstrual cycle and lower abdominal discomfort', emergency: false },
+        { name: 'Brian Otieno',   email: 'brian.otieno@example.com', age: 38, reason: 'Severe chest pain radiating to left arm and jaw, heavy sweating and feeling faint', emergency: true },
+        { name: 'Rose Wambui',    email: 'rose.wambui@example.com', age: 72, reason: 'Sudden severe headache, left-side facial drooping, slurred speech and confusion', emergency: true },
       ];
 
       const now = Date.now();
@@ -189,7 +185,7 @@ export function AdminDashboard() {
 
         const { data: patient, error: patErr } = await supabase
           .from('patients')
-          .insert({ phone_number: p.phone, full_name: p.name, age: p.age, visit_reason: p.reason })
+          .insert({ email: p.email, full_name: p.name, age: p.age, visit_reason: p.reason })
           .select('id')
           .single();
         if (patErr) throw patErr;
@@ -213,19 +209,19 @@ export function AdminDashboard() {
     }
   };
 
-  const sendTestSms = async () => {
-    setTestSmsStatus('');
-    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-sms`, {
+  const sendTestEmail = async () => {
+    setTestEmailStatus('');
+    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ to: testSmsNumber, message: 'Admin test SMS' }),
+      body: JSON.stringify({ to: testEmailAddress, subject: 'Admin test email', message: 'Admin test email' }),
     });
     const body = await res.json();
-    setTestSmsStatus(res.ok ? 'Sent.' : body?.error || 'Failed.');
+    setTestEmailStatus(res.ok ? 'Sent.' : body?.error || 'Failed.');
   };
 
   const toggleUser = async (userId: string, isActive: boolean) => {
@@ -237,7 +233,7 @@ export function AdminDashboard() {
     <div className="min-h-screen bg-gray-50 p-3 sm:p-6">
       <div className="max-w-7xl mx-auto">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
-        <p className="text-gray-600 mb-6 text-sm sm:text-base">Mobile-friendly controls for staff, queues, SMS, and diagnostics.</p>
+        <p className="text-gray-600 mb-6 text-sm sm:text-base">Mobile-friendly controls for staff, queues, email, and diagnostics.</p>
 
         <div className="bg-white rounded-lg shadow mb-6">
           <div className="border-b border-gray-200 overflow-x-auto">
@@ -277,7 +273,7 @@ export function AdminDashboard() {
                   <h2 className="text-xl font-semibold">Operations & Diagnostics</h2>
                   <button onClick={refreshOps} disabled={refreshingOps} className="px-3 py-2 rounded-lg bg-gray-100"><RefreshCw className={`w-4 h-4 inline mr-2 ${refreshingOps ? 'animate-spin' : ''}`} />Refresh</button>
                 </div>
-                <div className="p-3 rounded-lg border bg-gray-50 text-sm">{smsHealth}</div>
+                <div className="p-3 rounded-lg border bg-gray-50 text-sm">{emailHealth}</div>
                 <div className="p-4 border border-dashed border-purple-300 bg-purple-50 rounded-lg flex flex-col sm:flex-row sm:items-center gap-3">
                   <div className="flex-1">
                     <p className="font-semibold text-purple-900">Seed Demo Data</p>
@@ -290,27 +286,27 @@ export function AdminDashboard() {
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div className="p-4 border rounded-lg">
-                    <p className="font-semibold mb-2">Global SMS Switch</p>
-                    <button onClick={toggleSms} className={`px-4 py-2 rounded-lg text-white ${smsEnabled ? 'bg-green-600' : 'bg-red-600'}`}>{smsEnabled ? 'Enabled' : 'Disabled'}</button>
+                    <p className="font-semibold mb-2">Global Email Switch</p>
+                    <button onClick={toggleEmail} className={`px-4 py-2 rounded-lg text-white ${emailEnabled ? 'bg-green-600' : 'bg-red-600'}`}>{emailEnabled ? 'Enabled' : 'Disabled'}</button>
                   </div>
                   <div className="p-4 border rounded-lg space-y-2">
-                    <p className="font-semibold">Send Test SMS</p>
-                    <input type="tel" value={testSmsNumber} onChange={(e) => setTestSmsNumber(e.target.value)} placeholder="+254712345678" className="w-full border rounded-lg px-3 py-2" />
-                    <button onClick={sendTestSms} className="px-4 py-2 bg-blue-600 text-white rounded-lg">Send</button>
-                    {testSmsStatus && <p className="text-sm text-gray-700">{testSmsStatus}</p>}
+                    <p className="font-semibold">Send Test Email</p>
+                    <input type="email" value={testEmailAddress} onChange={(e) => setTestEmailAddress(e.target.value)} placeholder="you@example.com" className="w-full border rounded-lg px-3 py-2" />
+                    <button onClick={sendTestEmail} className="px-4 py-2 bg-blue-600 text-white rounded-lg">Send</button>
+                    {testEmailStatus && <p className="text-sm text-gray-700">{testEmailStatus}</p>}
                   </div>
                 </div>
                 <div className="p-4 border rounded-lg">
-                  <p className="font-semibold mb-2">Restore Cooled-Down Number</p>
+                  <p className="font-semibold mb-2">Restore Cooled-Down Email</p>
                   <form onSubmit={grantCooldownOverride} className="grid grid-cols-1 md:grid-cols-4 gap-2">
-                    <input required type="tel" value={cooldownPhone} onChange={(e) => setCooldownPhone(e.target.value)} placeholder="+254712345678" className="md:col-span-2 border rounded-lg px-3 py-2" />
+                    <input required type="email" value={cooldownEmail} onChange={(e) => setCooldownEmail(e.target.value)} placeholder="you@example.com" className="md:col-span-2 border rounded-lg px-3 py-2" />
                     <input type="number" min={1} value={cooldownHours} onChange={(e) => setCooldownHours(parseInt(e.target.value || '6', 10))} className="border rounded-lg px-3 py-2" />
                     <button className="bg-amber-600 text-white rounded-lg px-3 py-2">Grant Override</button>
                     <input value={cooldownReason} onChange={(e) => setCooldownReason(e.target.value)} placeholder="Reason" className="md:col-span-4 border rounded-lg px-3 py-2" />
                   </form>
                   {cooldownStatus && <p className="text-sm mt-2">{cooldownStatus}</p>}
                   <div className="overflow-x-auto mt-3">
-                    <table className="w-full min-w-[620px] text-sm"><thead><tr className="text-left text-xs uppercase text-gray-500"><th className="py-2">Phone</th><th>Bypass Until</th><th>Reason</th><th>Action</th></tr></thead><tbody>{overrides.map((o) => <tr key={o.id} className="border-t"><td className="py-2">{o.phone_number}</td><td>{new Date(o.bypass_until).toLocaleString()}</td><td>{o.reason || '-'}</td><td><button onClick={() => removeOverride(o.id)} className="text-red-600">Remove</button></td></tr>)}</tbody></table>
+                    <table className="w-full min-w-[620px] text-sm"><thead><tr className="text-left text-xs uppercase text-gray-500"><th className="py-2">Email</th><th>Bypass Until</th><th>Reason</th><th>Action</th></tr></thead><tbody>{overrides.map((o) => <tr key={o.id} className="border-t"><td className="py-2">{o.email || o.phone_number || '-'}</td><td>{new Date(o.bypass_until).toLocaleString()}</td><td>{o.reason || '-'}</td><td><button onClick={() => removeOverride(o.id)} className="text-red-600">Remove</button></td></tr>)}</tbody></table>
                   </div>
                 </div>
               </div>

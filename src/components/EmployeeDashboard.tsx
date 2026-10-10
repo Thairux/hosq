@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useQueueEntries, useQueueStages, useEmergencyFlags } from '../hooks/useQueue';
 import { supabase } from '../lib/supabase';
-import { notifyPatientStageChange, notifyPatientCalled, notifyPositionChange } from '../lib/sms';
+import { notifyPatientStageChange, notifyPatientCalled, notifyPositionChange } from '../lib/email';
 import {
   Users,
   Clock,
   ArrowRight,
   CheckCircle,
   AlertTriangle,
-  Phone,
+  Mail,
   User,
 } from 'lucide-react';
 
@@ -307,9 +307,9 @@ export function EmployeeDashboard() {
                             </span>
                           </div>
                           <div className="flex items-center gap-2 mt-1">
-                            <Phone className="w-3 h-3 text-gray-400" />
+                            <Mail className="w-3 h-3 text-gray-400" />
                             <span className="text-sm text-gray-500">
-                              {entry.patients?.phone_number}
+                              {entry.patients?.email || 'No email'}
                             </span>
                           </div>
                           <select

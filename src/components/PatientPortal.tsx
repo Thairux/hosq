@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useQueueStages } from '../hooks/useQueue';
-import { sendSMS } from '../lib/sms';
+import { sendEmail, EMAIL_RE } from '../lib/email';
 import { runAutoEmergencyTriage } from '../lib/auto-triage';
-import { normalizeKenyanPhone } from '../lib/phone';
 import { CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
 export function PatientPortal() {
@@ -16,7 +15,7 @@ export function PatientPortal() {
 
   const [formData, setFormData] = useState({
     fullName: '',
-    phoneNumber: '',
+    email: '',
     age: '',
     visitReason: '',
   });
@@ -29,16 +28,16 @@ export function PatientPortal() {
     setError('');
 
     try {
-      const normalizedPhone = normalizeKenyanPhone(formData.phoneNumber);
-      if (!normalizedPhone) {
-        throw new Error('Only Kenyan mobile numbers are allowed (e.g., +254712345678 or 0712345678).');
+      const normalizedEmail = formData.email.trim().toLowerCase();
+      if (!EMAIL_RE.test(normalizedEmail)) {
+        throw new Error('Please enter a valid email address (e.g., you@example.com).');
       }
 
       let patientId = '';
       const { data: existingPatient } = await supabase
         .from('patients')
         .select('id')
-        .eq('phone_number', normalizedPhone)
+        .eq('email', normalizedEmail)
         .maybeSingle();
 
       if (existingPatient) {
@@ -55,7 +54,7 @@ export function PatientPortal() {
         const { data: newPatient, error: patientError } = await supabase
           .from('patients')
           .insert({
-            phone_number: normalizedPhone,
+            email: normalizedEmail,
             full_name: formData.fullName,
             age: formData.age ? parseInt(formData.age) : null,
             visit_reason: formData.visitReason,
@@ -100,15 +99,16 @@ export function PatientPortal() {
         setEmergencyFlagged(true);
       }
 
-      const smsResult = await sendSMS(
-        normalizedPhone,
+      const emailResult = await sendEmail(
+        normalizedEmail,
+        `HOSQ: Registered as ${queueEntry.queue_number}`,
         `Hello ${formData.fullName}, you have been registered with queue number ${queueEntry.queue_number}. You are at ${firstStage.display_name}. Track your status at this page.`,
         patientId,
         queueEntry.id
       );
-      if (!smsResult.success) {
-        console.warn('SMS send failed:', smsResult.error);
-        setError(smsResult.error || 'SMS failed to send. Please verify SMS configuration.');
+      if (!emailResult.success) {
+        console.warn('Email send failed:', emailResult.error);
+        setError(emailResult.error || 'Email failed to send. Please verify email configuration.');
       }
 
       setQueueEntryId(queueEntry.id);
@@ -154,7 +154,7 @@ export function PatientPortal() {
 
           <div className="bg-blue-50 rounded-lg p-4 mb-6">
             <p className="text-sm text-gray-700">
-              Track your position in real-time below. You'll receive SMS notifications when it's your turn.
+              Track your position in real-time below. You'll receive email notifications when it's your turn.
             </p>
           </div>
           {error && (
@@ -170,7 +170,7 @@ export function PatientPortal() {
               setEmergencyFlagged(false);
               setFormData({
                 fullName: '',
-                phoneNumber: '',
+                email: '',
                 age: '',
                 visitReason: '',
               });
@@ -213,18 +213,18 @@ export function PatientPortal() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Phone Number *
+              Email Address *
             </label>
             <input
-              type="tel"
+              type="email"
               required
-              value={formData.phoneNumber}
-              onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="+1234567890"
+              placeholder="you@example.com"
             />
             <p className="text-xs text-gray-500 mt-1">
-              Kenyan mobile numbers only (e.g., +254712345678 or 0712345678)
+              Queue updates and call notifications arrive by email
             </p>
           </div>
 

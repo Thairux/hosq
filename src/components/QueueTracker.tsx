@@ -42,7 +42,7 @@ export function QueueTracker({ queueNumber }: QueueTrackerProps) {
           .from('queue_entries')
           .select(`
             *,
-            patients(full_name, phone_number),
+            patients(full_name, email),
             queue_stages(display_name, name, order_number)
           `)
           .eq('queue_number', queueNumber)
